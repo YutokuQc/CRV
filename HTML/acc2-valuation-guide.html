@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACC — How Cards Are Valued</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Teko:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #070a0d;
+  --panel: #0c1016;
+  --panel2: #101520;
+  --border: #1a2535;
+  --border2: #243040;
+  --gold: #f0b429;
+  --gold2: #ffd166;
+  --green: #06d6a0;
+  --red: #ef476f;
+  --blue: #118ab2;
+  --purple: #9b5de5;
+  --text: #c8d8e8;
+  --muted: #4a6080;
+  --muted2: #7090b0;
+  --dmg: #ff6b6b;
+  --hp: #51cf66;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  padding: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.012) 40px, rgba(255,255,255,0.012) 41px),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.012) 40px, rgba(255,255,255,0.012) 41px);
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-title {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.topbar-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted2);
+  letter-spacing: 0.1em;
+}
+
+.version-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  border: 1px solid var(--border2);
+  padding: 3px 8px;
+  letter-spacing: 0.1em;
+}
+
+/* ── MAIN LAYOUT ── */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* ── SECTION HEADER ── */
+.section-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border2), transparent);
+}
+
+.section-title {
+  font-family: 'Teko', sans-serif;
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 28px;
+  line-height: 1;
+}
+
+/* ── FOUNDATION BLOCK ── */
+.foundation {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+
+.found-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--gold);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.found-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 60px; height: 60px;
+  background: radial-gradient(circle at top right, rgba(240,180,41,0.06), transparent 70%);
+}
+
+.found-num {
+  font-family: 'Teko', sans-serif;
+  font-size: 3rem;
+  font-weight: 300;
+  color: rgba(240,180,41,0.15);
+  position: absolute;
+  top: 8px; right: 14px;
+  line-height: 1;
+}
+
+.found-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.found-title {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.found-body {
+  font-size: 0.88rem;
+  color: var(--muted2);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.found-formula {
+  margin-top: 10px;
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  padding: 8px 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--gold2);
+}
+
+/* ── STAT SPLIT VISUAL ── */
+.stat-split {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 48px;
+  align-items: stretch;
+}
+
+.split-visual {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+}
+
+.split-bar {
+  height: 32px;
+  border-radius: 2px;
+  display: flex;
+  overflow: hidden;
+  margin: 16px 0;
+  gap: 2px;
+}
+
+.split-dmg {
+  background: linear-gradient(90deg, #c62828, #ef5350);
+  flex: 33.33;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: #fff;
+  font-weight: bold;
+}
+
+.split-hp {
+  background: linear-gradient(90deg, #2e7d32, #43a047);
+  flex: 66.66;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: #fff;
+  font-weight: bold;
+}
+
+.split-legend {
+  display: flex;
+  gap: 20px;
+}
+
+.split-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted2);
+}
+
+.split-dot {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+}
+
+.split-reasoning {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--blue);
+  padding: 20px 24px;
+  font-size: 0.9rem;
+  color: var(--muted2);
+  line-height: 1.7;
+}
+
+.split-reasoning strong { color: var(--text); }
+
+/* ── EXAMPLE CARDS SECTION ── */
+.examples {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.example-block {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.example-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.example-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+
+.tag-simple { background: rgba(6,214,160,0.1); color: var(--green); border: 1px solid rgba(6,214,160,0.2); }
+.tag-complex { background: rgba(155,93,229,0.1); color: var(--purple); border: 1px solid rgba(155,93,229,0.2); }
+
+.example-name {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #fff;
+}
+
+/* Card display */
+.card-display {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.card-art {
+  width: 100%;
+  max-width: 260px;
+  flex-shrink: 0;
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.card-art-inner {
+  width: 100%;
+  padding-top: 140%;
+  position: relative;
+}
+
+/* Green Bomber art */
+.art-bomber {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(80,180,40,0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 70%, rgba(40,120,20,0.4) 0%, transparent 50%),
+    linear-gradient(180deg, #1a2a0a 0%, #0d1a06 100%);
+}
+
+.art-bomber-figure {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 80%;
+  background: linear-gradient(180deg, rgba(60,140,20,0.8) 0%, rgba(30,80,10,0.9) 100%);
+  clip-path: polygon(30% 0%, 70% 0%, 90% 20%, 95% 50%, 80% 100%, 20% 100%, 5% 50%, 10% 20%);
+}
+
+.art-bomber-glow {
+  position: absolute;
+  top: 20%; left: 50%;
+  transform: translateX(-50%);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(150,255,50,0.4) 0%, transparent 70%);
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* Beast Tamer art */
+.art-tamer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(220,140,20,0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 80%, rgba(180,80,10,0.3) 0%, transparent 40%),
+    linear-gradient(180deg, #1a1000 0%, #0d0800 100%);
+}
+
+.art-tamer-flame {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 90%;
+  background: linear-gradient(180deg, rgba(220,140,20,0.6) 0%, rgba(180,60,10,0.8) 50%, rgba(100,30,5,0.9) 100%);
+  clip-path: polygon(20% 0%, 50% 5%, 80% 0%, 95% 30%, 100% 60%, 85% 100%, 15% 100%, 0% 60%, 5% 30%);
+  animation: flameWaver 3s ease-in-out infinite;
+}
+
+.art-tamer-glow {
+  position: absolute;
+  top: 15%; left: 50%;
+  transform: translateX(-50%);
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,180,40,0.5) 0%, transparent 70%);
+  animation: glowPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.3); }
+}
+
+@keyframes flameWaver {
+  0%, 100% { clip-path: polygon(20% 0%, 50% 5%, 80% 0%, 95% 30%, 100% 60%, 85% 100%, 15% 100%, 0% 60%, 5% 30%); }
+  50% { clip-path: polygon(22% 2%, 50% 0%, 78% 2%, 93% 32%, 98% 62%, 83% 100%, 17% 100%, 2% 62%, 7% 32%); }
+}
+
+.card-art-badge {
+  position: absolute;
+  top: 4px; left: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.48rem;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 1px 5px;
+  color: #aaa;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+}
+
+.card-art-stats {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.85);
+  padding: 4px 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.art-stat {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.48rem;
+}
+
+.art-stat.d { color: var(--dmg); }
+.art-stat.h { color: var(--hp); }
+
+.card-info { flex: 1; }
+
+.ability-title {
+  font-family: 'Teko', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--gold2);
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+}
+
+.ability-desc {
+  font-size: 0.78rem;
+  color: var(--muted2);
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+.card-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.ctag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.5rem;
+  padding: 2px 6px;
+  border-radius: 1px;
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  letter-spacing: 0.08em;
+}
+
+/* Steps */
+.steps {
+  padding: 16px 20px;
+}
+
+.step {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+
+.step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.step-num {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--gold);
+  min-width: 24px;
+  line-height: 1;
+  padding-top: 2px;
+}
+
+.step-content { flex: 1; }
+
+.step-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.step-text {
+  font-size: 0.88rem;
+  color: var(--muted2);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.step-eq {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-left: 2px solid var(--gold);
+  padding: 6px 10px;
+  color: var(--gold2);
+  line-height: 1.6;
+}
+
+.step-eq .result {
+  color: var(--green);
+  font-weight: bold;
+}
+
+.step-eq .op { color: var(--muted2); }
+
+/* Final value display */
+.final-value {
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-top: 2px solid var(--gold);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fv-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.fv-breakdown {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted2);
+  margin-top: 2px;
+}
+
+.fv-number {
+  font-family: 'Teko', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 600;
+  color: var(--gold2);
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(240,180,41,0.3);
+}
+
+.fv-number.complex { color: var(--purple); text-shadow: 0 0 20px rgba(155,93,229,0.3); }
+.fv-number.complex-paired { color: var(--blue); font-size: 1.8rem; }
+
+/* ── MIN AVG MAX ── */
+.mam {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-top: 1px;
+}
+
+.mam-cell {
+  background: var(--panel2);
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.mam-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.52rem;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.mam-val {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.mam-val.min { color: var(--red); }
+.mam-val.avg { color: var(--gold); }
+.mam-val.max { color: var(--green); }
+
+/* ── RULES PANEL ── */
+.rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+
+.rule-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--muted);
+  padding: 14px 16px;
+}
+
+.rule-card.gold { border-left-color: var(--gold); }
+.rule-card.green { border-left-color: var(--green); }
+.rule-card.red { border-left-color: var(--red); }
+.rule-card.blue { border-left-color: var(--blue); }
+
+.rule-title {
+  font-family: 'Teko', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 5px;
+}
+
+.rule-body {
+  font-size: 0.82rem;
+  color: var(--muted2);
+  line-height: 1.55;
+}
+
+/* ── FOOTER ── */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-left {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+.footer-right {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 800px) {
+  .foundation { grid-template-columns: 1fr; }
+  .examples { grid-template-columns: 1fr; }
+  .rules { grid-template-columns: 1fr; }
+  .stat-split { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">ACC · Card Relative Value</div>
+    <div class="topbar-sub">How cards are evaluated and scored</div>
+  </div>
+  <div class="version-tag">CRV METHODOLOGY · v0.1</div>
+</div>
+
+<div class="page">
+
+  <!-- FOUNDATION -->
+  <div class="section-label">01 · Foundation</div>
+  <div class="section-title">The Three Pillars</div>
+  <div class="foundation">
+    <div class="found-card">
+      <div class="found-num">1</div>
+      <div class="found-label">Pillar One</div>
+      <div class="found-title">Base Score</div>
+      <div class="found-body">Every card starts at 1.0 — representing 100% of its stat value. This is the neutral baseline before any ability is considered.</div>
+      <div class="found-formula">BASE = 1.0 (always)</div>
+    </div>
+    <div class="found-card">
+      <div class="found-num">2</div>
+      <div class="found-label">Pillar Two</div>
+      <div class="found-title">Stat Split</div>
+      <div class="found-body">A card's stats are not equal. HP is worth double Damage because it takes 2 hits to kill a card of equal stats. This ratio drives every calculation.</div>
+      <div class="found-formula">DMG = 33.33% · HP = 66.66%</div>
+    </div>
+    <div class="found-card">
+      <div class="found-num">3</div>
+      <div class="found-label">Pillar Three</div>
+      <div class="found-title">Ability Value</div>
+      <div class="found-body">Ability score is added on top of the base. Calculated from proc rates, effect strength, and number of triggers within the 4-turn test environment.</div>
+      <div class="found-formula">FINAL = 1.0 + ABILITY%</div>
+    </div>
+  </div>
+
+  <!-- STAT SPLIT -->
+  <div class="section-label">02 · Stat Weight</div>
+  <div class="section-title">Why HP Outweighs Damage</div>
+  <div class="stat-split">
+    <div class="split-visual">
+      <div class="found-label">Stat Distribution Bar</div>
+      <div class="split-bar">
+        <div class="split-dmg">DMG 33.33%</div>
+        <div class="split-hp">HP 66.66%</div>
+      </div>
+      <div class="split-legend">
+        <div class="split-item"><div class="split-dot" style="background:#ef5350"></div>Damage — 33.33 points</div>
+        <div class="split-item"><div class="split-dot" style="background:#43a047"></div>HP — 66.66 points</div>
+      </div>
+    </div>
+    <div class="split-reasoning">
+      A card with <strong>100 DMG and 200 HP</strong> requires exactly <strong>2 basic attacks</strong> to defeat a card of equal stats. This means HP is inherently worth twice as much — losing it costs you twice as many turns.<br><br>
+      When a card buffs its own HP by 20%, the value gained is <strong>66.66 × 0.20 = 13.33 points</strong>. The same 20% to DMG only yields <strong>33.33 × 0.20 = 6.66 points</strong>. Same percentage, different impact.
+    </div>
+  </div>
+
+  <!-- TEST ENVIRONMENT -->
+  <div class="section-label">03 · Test Environment</div>
+  <div class="section-title">Lab Conditions</div>
+  <div class="rules" style="margin-bottom: 48px;">
+    <div class="rule-card gold">
+      <div class="rule-title">4v4 Format</div>
+      <div class="rule-body">All evaluations use a standardized 4v4 match — the most common play format and the format used in PvP. Both teams have 4 cards of identical stats to the card being evaluated.</div>
+    </div>
+    <div class="rule-card green">
+      <div class="rule-title">4 Turns · 8 Interactions</div>
+      <div class="rule-body">A full evaluation runs 4 turns. Each turn = 2 interactions between active cards. Basic attacks are present but deal no damage — they're universal and not a differentiating factor.</div>
+    </div>
+    <div class="rule-card blue">
+      <div class="rule-title">Min / Average / Max</div>
+      <div class="rule-body">Every ability is scored three ways. Min = worst realistic outcome. Average = statistically expected procs. Max = perfect RNG, all conditions met, absolute ceiling — still within 4 turns.</div>
+    </div>
+    <div class="rule-card red">
+      <div class="rule-title">Ceiling Values</div>
+      <div class="rule-body">All values represent idealistic outcomes. Where specific or unlikely conditions are required, they are flagged in the Author's Note. The goal is to expose maximum potential, not average performance.</div>
+    </div>
+  </div>
+
+  <!-- EXAMPLES -->
+  <div class="section-label">04 · Worked Examples</div>
+  <div class="section-title">From Card to Number</div>
+  <div class="examples">
+
+    <!-- GREEN BOMBER -->
+    <div class="example-block">
+      <div class="example-header">
+        <div class="example-name">Green Bomber</div>
+        <div class="example-tag tag-simple">Simple</div>
+      </div>
+
+      <div class="card-display">
+        <div class="card-art">
+          <div class="card-art-inner">
+            <img src="green_bomber.png" alt="Green Bomber" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:4px;">
+            <div class="card-art-badge">Secret</div>
+            <div class="card-art-stats">
+              <span class="art-stat d">DMG 448</span>
+              <span class="art-stat h">HP 896</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-info">
+          <div class="ability-title">Acidic Attack</div>
+          <div class="ability-desc">Explodes on death, dealing this card's max health as damage.</div>
+          <div class="card-tags">
+            <span class="ctag">On Death</span>
+            <span class="ctag">Guaranteed</span>
+            <span class="ctag">Single Target</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-label">Identify the trigger & effect</div>
+            <div class="step-text">On Death — fires once, guaranteed. Deals 100% of this card's max HP as damage to one target.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-label">Apply the stat weight</div>
+            <div class="step-text">The effect is HP-based damage. HP weight = 66.66 points.</div>
+            <div class="step-eq">100% of HP weight<br>= 100% <span class="op">×</span> 66.66<br>= <span class="result">66.66%</span></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-label">Check proc count</div>
+            <div class="step-text">On Death fires exactly once. No RNG. Min = Avg = Max.</div>
+            <div class="step-eq">Procs: <span class="result">×1 (guaranteed)</span><br>Min = Avg = Max = <span class="result">66.66%</span></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-label">Add to base score</div>
+            <div class="step-eq">1.0 <span class="op">+</span> 0.6666 = <span class="result">1.6666</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="final-value">
+        <div>
+          <div class="fv-label">Final Value</div>
+          <div class="fv-breakdown">Base 1.0 + Ability 0.6666</div>
+        </div>
+        <div class="fv-number">1.666</div>
+      </div>
+      <div class="mam">
+        <div class="mam-cell"><div class="mam-label">Min</div><div class="mam-val min">1.666</div></div>
+        <div class="mam-cell"><div class="mam-label">Avg</div><div class="mam-val avg">1.666</div></div>
+        <div class="mam-cell"><div class="mam-label">Max</div><div class="mam-val max">1.666</div></div>
+      </div>
+    </div>
+
+    <!-- BEAST TAMER -->
+    <div class="example-block">
+      <div class="example-header">
+        <div class="example-name">Beast Tamer</div>
+        <div class="example-tag tag-complex">Complex</div>
+      </div>
+
+      <div class="card-display">
+        <div class="card-art">
+          <div class="card-art-inner">
+            <img src="beast_tamer.png" alt="Beast Tamer" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:4px;">
+            <div class="card-art-badge">Secret</div>
+            <div class="card-art-stats">
+              <span class="art-stat d">225.47K</span>
+              <span class="art-stat h">450.94K</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-info">
+          <div class="ability-title">Undead Summon</div>
+          <div class="ability-desc">After being damaged, counterattack dealing 50% DMG taken. On death, summon 2 Undead Knights at 35% stats. If paired with Nature Guardian, also summon an Undead General at 75%.</div>
+          <div class="card-tags">
+            <span class="ctag">Counter Attack</span>
+            <span class="ctag">On Death</span>
+            <span class="ctag">Summon</span>
+            <span class="ctag">Paired</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-label">Counter Attack — 2 procs (dies before turn 3)</div>
+            <div class="step-text">50% of enemy DMG returned. Enemy DMG weight = 33.33. Max 2 procs since card dies to trigger summons.</div>
+            <div class="step-eq">50% <span class="op">×</span> 33.33 = 16.66% per proc<br>16.66% <span class="op">×</span> 2 procs = <span class="result">33.32%</span></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-label">On Death — 2 Undead Knights @ 35%</div>
+            <div class="step-text">Each summon = 35% of both stats. DMG + HP combined, then × 2 summons.</div>
+            <div class="step-eq">(33.33 <span class="op">×</span> 0.35) + (66.66 <span class="op">×</span> 0.35) = 34.99%<br>34.99% <span class="op">×</span> 2 knights = <span class="result">69.98%</span></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-label">Paired bonus — Undead General @ 75%</div>
+            <div class="step-text">Only activates when Nature Guardian is in the same party. Valued separately.</div>
+            <div class="step-eq">(33.33 <span class="op">×</span> 0.75) + (66.66 <span class="op">×</span> 0.75) = <span class="result">74.98%</span></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-label">Add to base — two totals reported</div>
+            <div class="step-eq">Without Paired: 1.0 + 1.0330 = <span class="result">2.0330</span><br>With Paired:&nbsp;&nbsp;&nbsp;1.0 + 1.7828 = <span class="result">2.7828</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="final-value">
+        <div>
+          <div class="fv-label">Final Value — No Pair</div>
+          <div class="fv-breakdown">Base 1.0 + Counter 0.3332 + Summons 0.6998</div>
+        </div>
+        <div class="fv-number complex">2.033</div>
+      </div>
+      <div class="final-value" style="border-top:none; background: rgba(17,138,178,0.05);">
+        <div>
+          <div class="fv-label">Final Value — With Nature Guardian</div>
+          <div class="fv-breakdown">+0.7498 from Undead General</div>
+        </div>
+        <div class="fv-number complex-paired">2.7828</div>
+      </div>
+      <div class="mam">
+        <div class="mam-cell"><div class="mam-label">Min</div><div class="mam-val min">2.033</div></div>
+        <div class="mam-cell"><div class="mam-label">Avg</div><div class="mam-val avg">2.033</div></div>
+        <div class="mam-cell"><div class="mam-label">Max</div><div class="mam-val max">2.7828</div></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">ACC · Card Relative Value Index · Methodology v0.1 · Living Document</div>
+  <div class="footer-right">For questions contact the index author in ACC Discord</div>
+</div>
+
+</body>
+</html>
